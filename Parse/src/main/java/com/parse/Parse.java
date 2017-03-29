@@ -326,38 +326,6 @@ public class Parse {
     );
   }
 
-  /**
-   * Authenticates this client as belonging to your application.
-   * <p/>
-   * This method is only required if you intend to use a different {@code applicationId} or
-   * {@code clientKey} than is defined by {@code com.parse.APPLICATION_ID} or
-   * {@code com.parse.CLIENT_KEY} in your {@code AndroidManifest.xml}.
-   * <p/>
-   * This must be called before your
-   * application can use the Parse library. The recommended way is to put a call to
-   * {@code Parse.initialize} in your {@code Application}'s {@code onCreate} method:
-   * <p/>
-   * <pre>
-   * public class MyApplication extends Application {
-   *   public void onCreate() {
-   *     Parse.initialize(this, &quot;your application id&quot;, &quot;your client key&quot;);
-   *   }
-   * }
-   * </pre>
-   *
-   * @param context       The active {@link Context} for your application.
-   * @param applicationId The application id provided in the Parse dashboard.
-   * @param clientKey     The client key provided in the Parse dashboard.
-   */
-  public static void initialize(Context context, String applicationId, String clientKey) {
-    initialize(new Configuration.Builder(context)
-            .applicationId(applicationId)
-            .clientKey(clientKey)
-            .setLocalDatastoreEnabled(isLocalDatastoreEnabled)
-            .build()
-    );
-  }
-
   public static void initialize(Configuration configuration) {
     // NOTE (richardross): We will need this here, as ParsePlugins uses the return value of
     // isLocalDataStoreEnabled() to perform additional behavior.
