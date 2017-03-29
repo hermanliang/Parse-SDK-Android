@@ -192,37 +192,23 @@ import java.util.List;
   
   /**
    * Inspects the app's manifest and returns whether the manifest contains required declarations to
-   * be able to use GCM or PPNS for push.
+   * be able to use GCM for push.
    */
   public static PushType getPushType() {
     synchronized (lock) {
       if (pushType == null) {
         boolean isGooglePlayServicesAvailable = isGooglePlayServicesAvailable();
-        boolean isPPNSAvailable = PPNSUtil.isPPNSAvailable();
         boolean hasAnyGcmSpecificDeclaration = hasAnyGcmSpecificDeclaration();
         ManifestCheckResult gcmSupportLevel = gcmSupportLevel();
-        ManifestCheckResult ppnsSupportLevel = ppnsSupportLevel();
 
         boolean hasPushBroadcastReceiver = usesPushBroadcastReceivers();
         boolean hasRequiredGcmDeclarations =
             (gcmSupportLevel != ManifestCheckResult.MISSING_REQUIRED_DECLARATIONS);
-        boolean hasRequiredPpnsDeclarations =
-            (ppnsSupportLevel != ManifestCheckResult.MISSING_REQUIRED_DECLARATIONS);
 
         if (hasPushBroadcastReceiver
             && isGooglePlayServicesAvailable
             && hasRequiredGcmDeclarations) {
           pushType = PushType.GCM;
-        } else if (hasPushBroadcastReceiver
-            && isPPNSAvailable
-            && hasRequiredPpnsDeclarations
-            && (!hasAnyGcmSpecificDeclaration || !isGooglePlayServicesAvailable)) {
-          pushType = PushType.PPNS;
-
-          if (isGooglePlayServicesAvailable) {
-            Log.w(TAG, "Using PPNS for push even though Google Play Services is available." +
-                " Please " + getGcmManifestMessage());
-          }
         } else {
           pushType = PushType.NONE;
 
@@ -266,7 +252,7 @@ import java.util.List;
         PLog.v(TAG, "Using " + pushType + " for push.");
 
         /*
-         * If we selected gcm/ppns but the manifest is missing some optional declarations, warn so
+         * If we selected gcm but the manifest is missing some optional declarations, warn so
          * the user knows how to add those optional declarations.
          */
         if (Parse.getLogLevel() <= Parse.LOG_LEVEL_WARNING) {
@@ -274,10 +260,6 @@ import java.util.List;
             PLog.w(TAG, "Using GCM for Parse Push, but the app manifest is missing some optional " +
                 "declarations that should be added for maximum reliability. Please " +
                 getGcmManifestMessage());
-          } else if (pushType == PushType.PPNS && ppnsSupportLevel == ManifestCheckResult.MISSING_OPTIONAL_DECLARATIONS) {
-            PLog.w(TAG, "Using PPNS for push, but the app manifest is missing some optional " +
-                "declarations that should be added for maximum reliability. Please " +
-                getPpnsManifestMessage());
           }
         }
       }
@@ -510,41 +492,6 @@ import java.util.List;
     return ManifestCheckResult.HAS_ALL_DECLARATIONS;
   }
   
-  private static ManifestCheckResult ppnsSupportLevel() {
-    Context context = getContext();
-    /*
-     * For backwards compatibility, the only required declaration for PPNS is the declaration of
-     * PushService as a <service>. That's the only declaration we checked before adding GCM support.
-     */
-    if (getServiceInfo(PushService.class) == null) {
-      return ManifestCheckResult.MISSING_REQUIRED_DECLARATIONS;
-    }
-
-    String[] optionalPermissions = new String[] {
-      "android.permission.INTERNET",
-      "android.permission.ACCESS_NETWORK_STATE",
-      "android.permission.VIBRATE",
-      "android.permission.WAKE_LOCK",
-      "android.permission.RECEIVE_BOOT_COMPLETED"
-    };
-
-    if (!hasGrantedPermissions(context, optionalPermissions)) {
-      return ManifestCheckResult.MISSING_OPTIONAL_DECLARATIONS;
-    }
-
-    String packageName = context.getPackageName();
-    Intent[] intents = new Intent[] {
-      new Intent("android.intent.action.BOOT_COMPLETED").setPackage(packageName),
-      new Intent("android.intent.action.USER_PRESENT").setPackage(packageName)
-    };
-    
-    if (!checkReceiver(ParseBroadcastReceiver.class, null, intents)) {
-      return ManifestCheckResult.MISSING_OPTIONAL_DECLARATIONS;
-    }
-    
-    return ManifestCheckResult.HAS_ALL_DECLARATIONS;
-  }
-  
   private static String getGcmManifestMessage() {
     String packageName = getContext().getPackageName();
     String gcmPackagePermission = packageName + ".permission.C2D_MESSAGE";
@@ -583,33 +530,4 @@ import java.util.List;
         "</receiver>";
   }
   
-  private static String getPpnsManifestMessage() {
-    return "make sure that these permissions are declared as children of the root " +
-        "<manifest> element:\n" +
-        "\n" +
-        "<uses-permission android:name=\"android.permission.INTERNET\" />\n" +
-        "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />\n" +
-        "<uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\" />\n" +
-        "<uses-permission android:name=\"android.permission.VIBRATE\" />\n" +
-        "<uses-permission android:name=\"android.permission.WAKE_LOCK\" />\n" +
-        "\n" +
-        "Also, please make sure that these services and broadcast receivers are declared as " +
-        "children of the <application> element:\n" +
-        "\n" +
-        "<service android:name=\"com.parse.PushService\" />\n" +
-        "<receiver android:name=\"com.parse.ParseBroadcastReceiver\">\n" +
-        "  <intent-filter>\n" +
-        "    <action android:name=\"android.intent.action.BOOT_COMPLETED\" />\n" +
-        "    <action android:name=\"android.intent.action.USER_PRESENT\" />\n" +
-        "  </intent-filter>\n" +
-        "</receiver>\n" +
-        "<receiver android:name=\"com.parse.ParsePushBroadcastReceiver\"" +
-        " android:exported=false>\n" +
-        "  <intent-filter>\n" +
-        "    <action android:name=\"com.parse.push.intent.RECEIVE\" />\n" +
-        "    <action android:name=\"com.parse.push.intent.OPEN\" />\n" +
-        "    <action android:name=\"com.parse.push.intent.DELETE\" />\n" +
-        "  </intent-filter>\n" +
-        "</receiver>";
-  }
 }

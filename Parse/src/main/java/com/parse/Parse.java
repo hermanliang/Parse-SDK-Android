@@ -422,10 +422,6 @@ public class Parse {
       }
     }, Task.BACKGROUND_EXECUTOR);
 
-    if (ManifestInfo.getPushType() == PushType.PPNS) {
-      PushService.startServiceIfRequired(applicationContext);
-    }
-
     dispatchOnParseInitialized();
 
     // FYI we probably don't want to do this if we ever add other callbacks.

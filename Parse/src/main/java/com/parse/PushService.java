@@ -181,22 +181,6 @@ public final class PushService extends Service {
 
   /* package */ static void startServiceIfRequired(Context context) {
     switch (ManifestInfo.getPushType()) {
-      case PPNS:
-        ParseInstallation installation = ParseInstallation.getCurrentInstallation();
-
-        // If we need to downgrade the installation from GCM to PPNS, make sure to clear out the GCM
-        // info in the installation and send it back up to the server.
-        if (installation.getPushType() == PushType.GCM) {
-          PLog.w(TAG, "Detected a client that used to use GCM and is now using PPNS.");
-
-          installation.removePushType();
-          installation.removeDeviceToken();
-          installation.saveEventually();
-        }
-
-        ServiceUtils.runIntentInService(
-            context, new Intent(PushService.ACTION_START_IF_REQUIRED), PushService.class);
-        break;
       case GCM:
         GcmRegistrar.getInstance().registerAsync();
         break;
@@ -207,15 +191,6 @@ public final class PushService extends Service {
           loggedStartError = true;
         }
         break;
-    }
-  }
-
-  /* package */ static void stopServiceIfRequired(Context context) {
-    switch (ManifestInfo.getPushType()) {
-      case PPNS:
-        context.stopService(new Intent(context, PushService.class));
-        break;
-      // We don't need to stop anything for GCM since PushService will only be short lived
     }
   }
 
@@ -239,9 +214,6 @@ public final class PushService extends Service {
     }
     
     switch (ManifestInfo.getPushType()) {
-      case PPNS:
-        proxy = PPNSUtil.newPPNSService(this);
-        break;
       case GCM:
         proxy = new GCMService(this);
         break;
@@ -263,7 +235,6 @@ public final class PushService extends Service {
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
     switch (ManifestInfo.getPushType()) {
-      case PPNS:
       case GCM:
         return proxy.onStartCommand(intent, flags, startId);
       default:

@@ -23,8 +23,6 @@ import java.io.IOException;
  * "com.parse.push.intent.RECEIVE" action. It also serializes a history of the last several pushes
  * seen by this app. This history is necessary for two reasons:
  *
- *  - For PPNS, we provide the last-seen timestamp to the server as part of the handshake. This is
- *    used as a cursor into the server-side inbox of recent pushes for this client.
  *  - For GCM, we use the history to deduplicate pushes when GCM decides to change the canonical
  *    registration id for a client (which can result in duplicate pushes while both the old and
  *    new registration id are still valid).

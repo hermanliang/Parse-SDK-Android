@@ -17,8 +17,7 @@ import java.util.PriorityQueue;
 
 /**
  * PushHistory manages a fixed-length history of pushes received. It is used by to dedup recently
- * received messages, as well as keep track of a last received timestamp that is included in PPNS
- * handshakes.
+ * received messages.
  */
 /** package */ class PushHistory {
   private static final String TAG = "com.parse.PushHistory";
